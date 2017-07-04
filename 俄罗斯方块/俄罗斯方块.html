@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+ <head>
+<meta charset="utf-8">
+ </head>
+ <body>
+  <div id="box" style="width:252px;font:25px/25px 宋体;background:#000;color:#FFF;text-shadow:2px 3px 1px #0f0; float:left"></div>
+  <div style="background:#F33;width:50px;height:50px; float:left;"></div>
+  <script>
+ var map=eval("["+Array(23).join("0x801,")+"0xfff]");
+  var pattern = [[0x6600],[0x2222,0xf00],[0xc600,0x2640],[0x6c00,0x4620],[0x4460,0x2e0,0x6220,0x740],[0x2260,0xe20,0x6440,0x4700],[0x2620,0x720,0x2320,0x2700]];
+				   //创建七中不同的方块，以16位2进制形成的4*4块状区域存储方块图案，每个数组length代表该图案可旋转的不同形状
+				
+  var keycom ={"38":"rotate(1)",
+			    "40":"down()",
+				"37":"move(2,1)",
+				"39":"move(0.5,-1)"}//37,38,39,40在keycode中分别对应键位为left,up,right,down
+				
+  var dia,pos,bak,run;//dia为存储选取的俄罗斯方块
+				  //pos为正在下落的方块对象
+				  //bak为pos的备份对象，在需要撤销（pos与墙体重合时）时可以实现对pos运动的撤销
+//游戏开始
+
+function start(){  
+	dia = pattern[parseInt(Math.random()*7)];//随机选取一种方块图案
+	bak = pos = {fk:[],   //这是一个数组
+				 x:4,		//方块生成时偏离map右侧4位
+				 y:0,
+				 s:parseInt(Math.random()*4)};  //随机选取方块的形状
+	rotate(0); //初始方块无需旋转
+};
+
+function over(){
+	document.onkeydown = null;
+	clearInterval(run);
+	alert("Game Over");
+};
+
+// 传入 is() 即当重合时，重新绘制场景
+function update(t){
+	bak = {fk:pos.fk.slice(0),y:pos.y,x:pos.x,s:pos.s};//不能直接将pos.fk的值直接赋值给bak.fk，否则只能建立引用关系,bak.fk会随pos.fk的改变而改变，slice(0)是截取整个数组，这样就可以备份pos.fk的值
+	if (t)
+	{
+		return;//如果a为ture即重合了  则不需要重建场景，直接返回
+		
+	}
+	for (var i=0,a2="";i<22 ;i++ )
+	{					
+		a2 += map[i].toString(2).slice(1,-1)+"<br/>"; //取得地图中存储数据为0的区域（即空白区）
+	}
+	for (var i=0;i<4 ;i++ )
+	{
+		if (/([^0]+)/.test(bak.fk[i].toString(2).replace(/1/g,"\u25a1")))//判断bak.fk[i]的2进制数据中存不存在一个或多个非0字符，存在返回ture否则返回false
+		{
+			a2 = a2.substr(0,n=(bak.y+1+i)*15-RegExp.$_.length-4)+RegExp.$1+a2.slice(n+RegExp.$1.length);
+			document.getElementById("box").innerHTML = a2.replace(/1/g,"\u25a0").replace(/0/g,"\u3000");
+		}
+	}
+};
+/*function update(t){
+bak={fk:pos.fk.slice(0),y:pos.y,x:pos.x,s:pos.s};
+if(t) return;
+for(var i=0,a2=""; i<22; i++)
+a2+=map[i].toString(2).slice(1,-1)+"<br/>";
+for(var i=0,n; i<4; i++)
+if(/([^0]+)/.test(bak.fk[i].toString(2).replace(/1/g,"\u25a1")))
+a2=a2.substr(0,n=(bak.y+i+1)*15-RegExp.$_.length-4)+RegExp.$1+a2.slice(n+RegExp.$1.length);
+document.getElementById("box").innerHTML=a2.replace(/1/g,"\u25a0").replace(/0/g,"\u3000");
+}*/
+
+function is() {
+	
+	for (var i=0;i<4;i++ )
+	{
+		if ((pos.fk[i] & map[pos.y+i])!=0) //如果pos.fk[i] & map[pos.y+1] = 1 说明方块与墙壁或者方块与方块重合了 因为只有 1 & 1 才为真，而存储数据为1的只有方块和墙壁
+		{
+			return pos = bak;  //撤销pos的动作，
+		}
+	}
+	// 不重合则返回空
+};
+
+//旋转r次
+function rotate(r){
+	var f = dia[pos.s=(pos.s+r)%dia.length] ;//将方块旋转r次后方块的形状确定，同时更新pos.s的值
+	for (var i=0;i<4 ;i++ )
+	{
+		pos.fk[i] = (f >> (12-i*4) & 0x00f)<<pos.x;// x & 0x00f 每次保留x的低四位    >> 优先级大于 &
+		//i=0  以f=0x2620为例， f>>12 ==>0010   在<<pos.x（以初始值4为例）==>10 0000
+		//i=1   f>>8 ==>  0110    在<<pos.x（以初始值4为例）==>110 0000
+
+	}
+	//地图场景更新
+	update(is());
+};
+
+function down(){
+	++pos.y;
+	if (is())
+	{
+		for (var i = 0,count=0;i<4 && pos.y+i<22;i++ )
+		{
+			if ((map[pos.y+i] |=pos.fk[i])==0xfff)//等同于map[pos.y+i] = map[pos.y+i] | pos.fk[i]
+			{                                      //if (map[pos.y+i] ==0xfff)
+				map.splice(pos.y+i,1);
+				map.unshift(0x801);
+				count++
+			}
+			 
+		}
+		if (map[1]!=0x801)
+		{
+			return over();
+		}
+		start();
+	}
+	update();
+};
+
+function move(t,k){
+	pos.x +=k;
+	for (var i=0;i<4 ;i++ )
+	{
+		pos.fk[i] *=t;
+	}
+	update(is())
+}
+
+document.onkeydown = function(e) {
+	eval(keycom[(e ? e:event).keyCode])
+};
+start();
+run = setInterval("down()",500);
+
+</script>
+ </body>
+</html>
