@@ -1,0 +1,36 @@
+<snippet>
+	<content><![CDATA[
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<script>
+		window.onload = function() {
+			//得到canvas对象
+			var canvas = document.getElementById("canvas");
+			//判断浏览器是否支持canvas
+			if(canvas.getContext){
+				//设置canvas的宽高
+				canvas.width = 600;
+				canvas.height = 600;
+				//设置canvas的边框
+				canvas.style.border = "1px solid #000";
+				var ctx = canvas.getContext("2d");
+			}
+		}
+	</script>
+</head>
+<body>
+	<canvas id="canvas">
+		对不起，您的浏览器不技术canvas，请升级或者更换浏览器打开
+	</canvas>
+	<div id="abc"></div>
+</body>
+</html>
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<!-- <tabTrigger>hello</tabTrigger> -->
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<!-- <scope>source.python</scope> -->
+</snippet>

@@ -1,0 +1,2 @@
+!define VERSION 7.6.2
+!define BUILD 201611251335
